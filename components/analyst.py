@@ -172,4 +172,4 @@ class FinancialAnalystChain():
         return result
 
 
-print(FinancialAnalystChain().analyse_stock("MCD","Should I buy or sell this stock based on its current price?"))
+print(FinancialAnalystChain().analyse_stock("NVDA","Should I buy or sell this stock based on its current price?"))
