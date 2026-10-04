@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 
 from ml.model import create_model
-
+from ml.model import create_features
 
 MODEL_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -23,60 +23,29 @@ FEATURES = [
     "volume_change"
 ]
 
-
-def create_features(data: pd.DataFrame) -> pd.DataFrame:
-
-    data = data.copy()
-
-    data["return_1d"] = data["Close"].pct_change()
-
-    data["return_5d"] = data["Close"].pct_change(5)
-
-    data["ma_5"] = data["Close"].rolling(5).mean()
-
-    data["ma_20"] = data["Close"].rolling(20).mean()
-
-    data["ma_ratio"] = data["ma_5"] / data["ma_20"]
-
-    data["volatility"] = (
-        data["Close"]
-        .pct_change()
-        .rolling(10)
-        .std()
-    )
-
-    data["volume_change"] = data["Volume"].pct_change()
-
-    # Target:
-    # 1 = price goes up next trading day
-    # 0 = price goes down next trading day
-
-    data["target"] = (
-        data["Close"].shift(-1) > data["Close"]
-    ).astype(int)
-
-    data = data.dropna()
-
-    return data
-
+tickers = ["AAPL", "NVDA", "MSFT", "TSLA", "GOOGL", "AMZN", "META", "NFLX", "AMD", "INTC"]
 
 def train_model(ticker: str = "AAPL"):
 
-    print(f"Downloading historical data for {ticker}...")
+    all_data = []
+    for ticker in tickers:
+        print(f"Downloading {ticker}....")
+        data = yf.download(
+                ticker,
+                period="5y",
+                auto_adjust=True,
+                progress=False
+            )
+        data = create_features(data)
+        all_data = data.append(data)
 
-    data = yf.download(
-        ticker,
-        period="5y",
-        auto_adjust=True,
-        progress=False
-    )
+    combined = pd.concat(all_data)
+    
 
     if data.empty:
         raise ValueError(
             f"No historical data found for {ticker}"
         )
-
-    data = create_features(data)
 
     X = data[FEATURES]
     y = data["target"]

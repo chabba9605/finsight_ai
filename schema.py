@@ -29,7 +29,7 @@ class ChatResponse(BaseModel):
     ticker: str
     message: str
     market_data: MarketDataResponse
-    analysis: AnalysisResponse
+    analysis: dict
     sources: list[str]
 
 

@@ -3,6 +3,8 @@ import joblib
 import yfinance as yf
 import pandas as pd
 
+from ml.model import create_features
+
 
 MODEL_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -17,39 +19,6 @@ FEATURES = [
     "volatility",
     "volume_change"
 ]
-
-
-def create_features(data: pd.DataFrame) -> pd.DataFrame:
-
-    data = data.copy()
-
-    data["return_1d"] = data["Close"].pct_change()
-
-    data["return_5d"] = data["Close"].pct_change(5)
-
-    data["ma_5"] = data["Close"].rolling(5).mean()
-
-    data["ma_20"] = data["Close"].rolling(20).mean()
-
-    data["ma_ratio"] = (
-        data["ma_5"] / data["ma_20"]
-    )
-
-    data["volatility"] = (
-        data["Close"]
-        .pct_change()
-        .rolling(10)
-        .std()
-    )
-
-    data["volume_change"] = (
-        data["Volume"].pct_change()
-    )
-
-    data = data.dropna()
-
-    return data
-
 
 def predict_stock(ticker: str):
 
