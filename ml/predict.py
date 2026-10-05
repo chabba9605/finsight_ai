@@ -1,55 +1,79 @@
 import os
+
 import joblib
 import yfinance as yf
-import pandas as pd
 
-from ml.model import create_features
+from ml.model import (
+    FEATURES,
+    create_features,
+)
 
 
 MODEL_PATH = os.path.join(
     os.path.dirname(__file__),
-    "stock_model.pkl"
+    "stock_model.pkl",
 )
 
 
-FEATURES = [
-    "return_1d",
-    "return_5d",
-    "ma_ratio",
-    "volatility",
-    "volume_change"
-]
+def predict_stock(ticker: str) -> dict:
+    """
+    Generate an ML prediction for a stock.
 
-def predict_stock(ticker: str):
+    Returns:
+        ticker
+        prediction
+        probability_up
+        probability_down
+        score
+    """
 
-    if not os.path.exists(MODEL_PATH):
+    ticker = ticker.upper().strip()
 
-        raise FileNotFoundError(
-            "ML model not found. "
-            "Run: python -m ml.train AAPL"
+    if not ticker:
+        raise ValueError(
+            "Ticker symbol cannot be empty."
         )
 
-    model = joblib.load(MODEL_PATH)
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError(
+            "ML model not found. "
+            "Run: python -m ml.train"
+        )
+
+    model = joblib.load(
+        MODEL_PATH
+    )
 
     print(
-        f"Getting recent data for {ticker}..."
+        f"Getting recent ML data for {ticker}..."
     )
 
     data = yf.download(
         ticker,
         period="3mo",
         auto_adjust=True,
-        progress=False
+        progress=False,
     )
 
     if data.empty:
         raise ValueError(
-            f"No data found for {ticker}"
+            f"No market data found for {ticker}"
         )
 
-    data = create_features(data)
+    # Prediction does not need the target column.
+    data = create_features(
+        data,
+        include_target=False,
+    )
 
-    latest = data[FEATURES].iloc[[-1]]
+    if data.empty:
+        raise ValueError(
+            f"Not enough data to generate ML features for {ticker}"
+        )
+
+    latest = data[
+        FEATURES
+    ].iloc[[-1]]
 
     prediction = int(
         model.predict(latest)[0]
@@ -59,12 +83,12 @@ def predict_stock(ticker: str):
         latest
     )[0]
 
-    probability_up = float(
-        probabilities[1]
-    )
-
     probability_down = float(
         probabilities[0]
+    )
+
+    probability_up = float(
+        probabilities[1]
     )
 
     if prediction == 1:
@@ -79,7 +103,7 @@ def predict_stock(ticker: str):
         "prediction": direction,
         "probability_up": probability_up,
         "probability_down": probability_down,
-        "score": float(score)
+        "score": float(score),
     }
 
 
@@ -92,12 +116,19 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         ticker = sys.argv[1].upper()
 
-    result = predict_stock(ticker)
+    result = predict_stock(
+        ticker
+    )
 
-    print("\nML Prediction")
+    print()
+    print("ML Prediction")
     print("----------------")
-    print(f"Ticker: {result['ticker']}")
-    print(f"Prediction: {result['prediction']}")
+    print(
+        f"Ticker: {result['ticker']}"
+    )
+    print(
+        f"Prediction: {result['prediction']}"
+    )
     print(
         f"Probability UP: "
         f"{result['probability_up']:.2%}"

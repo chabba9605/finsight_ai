@@ -1,20 +1,21 @@
-from tavily import TavilyClient
-from dotenv import load_dotenv
 from components.state import FinSightState
-import os
+from rag.retriever import get_financial_news
 
-load_dotenv()
-tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
-def retrieval_agent(state: FinSightState) -> FinSightState:
-    results = tavily.search(
-        query=f"{state['ticker']} stock news analysis",
-        max_results=5,
-        search_depth="advanced"
+def retrieval_agent(
+    state: FinSightState,
+) -> FinSightState:
+    """
+    Retrieve recent financial/news information using Tavily.
+    """
+
+    ticker = state["ticker"]
+
+    context, sources = get_financial_news(
+        ticker
     )
-    articles = results.get("results", [])
-    context = "\n".join([f"{a['title']}: {a['content']}" for a in articles])
-    sources = [a["url"] for a in articles]
-    state["retrieved_context"] = context
-    state["sources"] = sources
-    return state
+
+    return {
+        "retrieved_context": context,
+        "sources": sources,
+    }
