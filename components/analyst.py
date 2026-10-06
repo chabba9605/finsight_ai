@@ -1,25 +1,25 @@
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI 
 from dotenv import load_dotenv, find_dotenv
 import os
 
 load_dotenv(find_dotenv())
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+NEBIUS_API_KEY = os.environ.get("NEBIUS_API_KEY")
 
-if not GROQ_API_KEY:
+if not NEBIUS_API_KEY:
     raise ValueError(
-        "GROQ_API_KEY is not set. "
+        "NEBIUS_API_KEY is not set. "
         "Make sure your .env file contains:\n"
-        "GROQ_API_KEY=your_api_key_here"
+        "NEBIUS_API_KEY=your_api_key_here"
     )
 
-llm = ChatGroq(
-    model="qwen/qwen3.8-27b",
-    api_key=GROQ_API_KEY,
-    max_tokens=700,
-    temperature=0.3,
+llm = ChatOpenAI(
+    model="zai-org/GLM-5.3",
+    api_key=NEBIUS_API_KEY,
+    base_url="https://api.studio.nebius.ai/v1/",
+    temperature=0.9
 )
 
 prompt = ChatPromptTemplate.from_template(

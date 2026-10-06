@@ -5,7 +5,7 @@ pydantic
 python-dotenv
 
 langchain-core
-langchain-groq
+langchain-openai
 langgraph
 
 tavily-python
