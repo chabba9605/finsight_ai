@@ -162,7 +162,7 @@ function App() {
       controller.abort();
     }, 120_000);
     try {
-      const response = await fetch("/api/chat/stream", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "/api"}/chat/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from stock_history import router as stock_history_router
 from chat_stream import router as chat_stream_router
+from fastapi.middleware.cors import CORSMiddleware
 
 from graph import pipeline
 

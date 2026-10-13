@@ -24,7 +24,7 @@ export default function StockChart({ ticker }: { ticker: string }) {
       setData(null);
       setError("");
       try {
-        const response = await fetch(`/api/stock/${encodeURIComponent(ticker)}/history?period=${period}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || "/api"}/stock/${encodeURIComponent(ticker)}/history?period=${period}`, {
           signal: controller.signal,
         });
         const result = await response.json();
