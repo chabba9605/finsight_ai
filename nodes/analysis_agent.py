@@ -1,15 +1,10 @@
 from components.analyst import analyse_stock
 from components.state import FinSightState
+import re
 
 
-def parse_analysis(
-    text: str,
-) -> dict:
-    """
-    Convert the LLM's structured text response
-    into a dictionary suitable for the API.
-    """
 
+def parse_analysis(text: str) -> dict:
     sections = {
         "recommendation": "",
         "confidence": "",
@@ -20,106 +15,68 @@ def parse_analysis(
         "data_limitation": "",
     }
 
-    current_section = None
+    headings = {
+        "RECOMMENDATION": "recommendation",
+        "CONFIDENCE": "confidence",
+        "REASON": "reason",
+        "KEY FINANCIAL FACTORS": "key_financial_factors",
+        "NEWS IMPACT": "news_impact",
+        "MAIN RISK": "main_risk",
+        "DATA LIMITATION": "data_limitation",
+    }
 
-    for line in text.splitlines():
+    current = None
 
-        line = line.strip()
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
 
         if not line:
             continue
 
-        if line.startswith(
-            "RECOMMENDATION:"
-        ):
-            sections[
-                "recommendation"
-            ] = line.split(
-                ":",
-                1,
-            )[1].strip()
+        # Support plain text and Markdown-formatted headings.
+        clean = line.strip("# ").replace("**", "").strip()
 
-        elif line.startswith(
-            "CONFIDENCE:"
-        ):
-            sections[
-                "confidence"
-            ] = line.split(
-                ":",
-                1,
-            )[1].strip()
+        match = re.match(
+            r"^([A-Za-z ]+)\s*:\s*(.*)$",
+            clean,
+        )
 
-        elif line == "REASON:":
-            current_section = "reason"
+        if match:
+            heading = match.group(1).upper().strip()
 
-        elif line == "KEY FINANCIAL FACTORS:":
-            current_section = (
-                "key_financial_factors"
+            if heading in headings:
+                current = headings[heading]
+                value = match.group(2).strip()
+
+                if value:
+                    if isinstance(sections[current], list):
+                        sections[current].append(value.lstrip("-• "))
+                    else:
+                        sections[current] = value
+
+                continue
+
+        if current is None:
+            continue
+
+        if isinstance(sections[current], list):
+            value = clean.lstrip("-• ").strip()
+            if value:
+                sections[current].append(value)
+        else:
+            sections[current] += (
+                (" " if sections[current] else "") + clean
             )
 
-        elif line == "NEWS IMPACT:":
-            current_section = "news_impact"
-
-        elif line == "MAIN RISK:":
-            current_section = "main_risk"
-
-        elif line == "DATA LIMITATION:":
-            current_section = (
-                "data_limitation"
-            )
-
-        elif current_section == "reason":
-            sections["reason"] += (
-                " "
-                if sections["reason"]
-                else ""
-            ) + line
-
-        elif (
-            current_section
-            == "key_financial_factors"
-        ):
-            if (
-                line.startswith("-")
-                or line.startswith("•")
-            ):
-                sections[
-                    "key_financial_factors"
-                ].append(
-                    line[1:].strip()
-                )
-
-        elif current_section == "news_impact":
-            if (
-                line.startswith("-")
-                or line.startswith("•")
-            ):
-                sections[
-                    "news_impact"
-                ].append(
-                    line[1:].strip()
-                )
-
-        elif current_section == "main_risk":
-            sections["main_risk"] += (
-                " "
-                if sections["main_risk"]
-                else ""
-            ) + line
-
-        elif (
-            current_section
-            == "data_limitation"
-        ):
-            sections[
-                "data_limitation"
-            ] += (
-                " "
-                if sections[
-                    "data_limitation"
-                ]
-                else ""
-            ) + line
+    # Do not silently accept an incomplete LLM response.
+    if (
+        not sections["recommendation"]
+        or not sections["reason"]
+    ):
+        raise ValueError(
+            "Nebius returned an incomplete analysis. "
+            "Please retry the request."
+        )
 
     return sections
 

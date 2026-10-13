@@ -20,7 +20,7 @@ llm = ChatOpenAI(
     api_key=NEBIUS_API_KEY,
     base_url="https://api.studio.nebius.ai/v1/",
     temperature=0.3,
-    max_tokens=700,
+    max_tokens=1500,
     timeout=45,
     max_retries=1,
 )
