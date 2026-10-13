@@ -22,8 +22,6 @@ app = FastAPI(
     ),
     version="1.0.0",
 )
-app.include_router(stock_history_router)
-app.include_router(chat_stream_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -34,6 +32,8 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+app.include_router(stock_history_router)
+app.include_router(chat_stream_router)
 
 @app.get(
     "/health",
