@@ -24,6 +24,16 @@ app = FastAPI(
 )
 app.include_router(stock_history_router)
 app.include_router(chat_stream_router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://chabba9605.github.io",
+        "http://localhost:5173",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 
 @app.get(
     "/health",

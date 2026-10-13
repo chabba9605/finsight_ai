@@ -220,7 +220,7 @@ function App() {
       } else if (timedOutRef.current) {
         setError("The analysis took more than 2 minutes. Check the backend and try again.");
       } else if (err instanceof TypeError) {
-        setError("Cannot reach FinSight AI. Check that Docker is running on port 8000 and retry.");
+        setError("Unable to connect to the FinSight AI server. The service may be starting up or temporarily unavailable. Please try again.");
       } else {
         setError(err instanceof Error ? err.message : "Unable to analyse this stock. Please retry.");
       }
