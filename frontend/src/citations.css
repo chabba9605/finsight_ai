@@ -1,0 +1,3 @@
+.inline-citation { display:inline-flex; align-items:center; gap:4px; margin:0 2px; padding:1px 6px; border-radius:5px; color:#b7ceff; background:#1b3154; border:1px solid #345587; font-size:.92em; white-space:nowrap; text-decoration:none; vertical-align:baseline; }
+.inline-citation:hover, .inline-citation:focus-visible { color:white; background:#285298; border-color:#6595ef; outline-offset:2px; }
+.inline-citation svg { flex-shrink:0; }

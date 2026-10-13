@@ -4,45 +4,42 @@ import joblib
 import pandas as pd
 import yfinance as yf
 
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-)
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.dummy import DummyClassifier
+from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
-from ml.model import (
-    FEATURES,
-    create_features,
-    create_model,
-)
+from ml.model import FEATURES, create_features
 
 
-MODEL_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "stock_model.pkl",
-)
-
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "stock_model.pkl")
 
 TICKERS = [
-    "AAPL",
-    "NVDA",
-    "MSFT",
-    "TSLA",
-    "GOOGL",
-    "AMZN",
-    "META",
-    "NFLX",
-    "AMD",
-    "INTC",
+    "AAPL", "NVDA", "MSFT", "TSLA", "GOOGL",
+    "AMZN", "META", "NFLX", "AMD", "INTC",
 ]
 
 
-def download_stock_data(ticker: str) -> pd.DataFrame:
-    """
-    Download five years of historical market data
-    for a single ticker.
-    """
+def make_models():
+    return {
+        "Random Forest": RandomForestClassifier(
+            n_estimators=300,
+            max_depth=8,
+            min_samples_leaf=10,
+            class_weight="balanced",
+            random_state=42,
+            n_jobs=-1,
+        ),
+        "Gradient Boosting": GradientBoostingClassifier(
+            n_estimators=100,
+            learning_rate=0.05,
+            max_depth=2,
+            min_samples_leaf=20,
+            random_state=42,
+        ),
+    }
 
+
+def download_stock_data(ticker):
     print(f"Downloading {ticker}...")
 
     data = yf.download(
@@ -50,133 +47,126 @@ def download_stock_data(ticker: str) -> pd.DataFrame:
         period="5y",
         auto_adjust=True,
         progress=False,
+        threads=False,
+        multi_level_index=False,
+        timeout=30,
     )
 
     if data.empty:
-        raise ValueError(
-            f"No historical data found for {ticker}"
-        )
+        raise ValueError(f"No historical data for {ticker}")
 
-    data = create_features(
-        data,
-        include_target=True,
-    )
-
-    # Keep track of which company each observation belongs to.
+    data = create_features(data, include_target=True)
     data["ticker"] = ticker
-
     return data
 
 
 def train_model():
-    """
-    Train the Random Forest model using historical data
-    from multiple stocks.
-    """
-
-    all_data = []
+    datasets = []
 
     for ticker in TICKERS:
         try:
-            data = download_stock_data(ticker)
-            all_data.append(data)
+            datasets.append(download_stock_data(ticker))
+        except Exception as error:
+            print(f"Warning: {ticker} failed: {error}")
 
-        except Exception as e:
+    if not datasets:
+        raise ValueError("No training data downloaded.")
+
+    data = pd.concat(datasets).sort_index()
+    data = data.replace([float("inf"), float("-inf")], float("nan"))
+    data = data.dropna(subset=FEATURES + ["target"])
+
+    dates = data.index.unique().sort_values()
+    n_dates = len(dates)
+
+    if n_dates < 200:
+        raise ValueError("Not enough historical dates.")
+
+    # Expanding-window validation: each fold trains on the past
+    # and validates on the following, unseen dates.
+    fold_starts = [0.50, 0.60, 0.70, 0.80]
+    scores = {name: [] for name in make_models()}
+
+    print(f"\nTotal rows: {len(data)}")
+    print(f"Unique trading dates: {n_dates}")
+    print("\nWalk-forward validation:")
+
+    for fold_number, fraction in enumerate(fold_starts, start=1):
+        train_end = int(n_dates * fraction)
+        val_end = int(n_dates * (fraction + 0.10))
+
+        train = data.loc[data.index < dates[train_end]]
+        validation = data.loc[
+            (data.index >= dates[train_end])
+            & (data.index < dates[val_end])
+        ]
+
+        X_train, y_train = train[FEATURES], train["target"]
+        X_val, y_val = validation[FEATURES], validation["target"]
+
+        print(f"\nFold {fold_number} — train: {len(train)}, "
+              f"validation: {len(validation)}")
+
+        for name, model in make_models().items():
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_val)
+
+            accuracy = accuracy_score(y_val, predictions)
+            balanced = balanced_accuracy_score(y_val, predictions)
+
+            scores[name].append(balanced)
+
             print(
-                f"Warning: Could not process {ticker}: {e}"
+                f"{name}: accuracy={accuracy:.2%}, "
+                f"balanced accuracy={balanced:.2%}"
             )
 
-    if not all_data:
-        raise ValueError(
-            "No training data could be downloaded."
-        )
+    print("\nAverage walk-forward balanced accuracy:")
+    for name, fold_scores in scores.items():
+        print(f"{name}: {sum(fold_scores) / len(fold_scores):.2%}")
 
-    # Correctly combine all ticker datasets.
-    combined = pd.concat(
-        all_data,
-        axis=0,
+    # Choose using validation periods only, not the final holdout.
+    best_name = max(
+        scores,
+        key=lambda name: sum(scores[name]) / len(scores[name]),
     )
+    print(f"\nSelected model: {best_name}")
 
-    # Sort by date so that the train/test split remains
-    # chronological rather than random.
-    combined = combined.sort_index()
+    # Evaluate the chosen model on the latest 10% of dates.
+    holdout_start = int(n_dates * 0.90)
 
-    X = combined[FEATURES]
-    y = combined["target"]
+    training = data.loc[data.index < dates[holdout_start]]
+    holdout = data.loc[data.index >= dates[holdout_start]]
 
-    if len(X) < 100:
-        raise ValueError(
-            "Not enough training data available."
-        )
+    selected_model = make_models()[best_name]
+    selected_model.fit(training[FEATURES], training["target"])
 
-    # Do NOT shuffle time-series data.
-    split_index = int(len(combined) * 0.8)
+    predictions = selected_model.predict(holdout[FEATURES])
 
-    X_train = X.iloc[:split_index]
-    X_test = X.iloc[split_index:]
+    baseline = DummyClassifier(strategy="most_frequent")
+    baseline.fit(training[FEATURES], training["target"])
+    baseline_predictions = baseline.predict(holdout[FEATURES])
 
-    y_train = y.iloc[:split_index]
-    y_test = y.iloc[split_index:]
-
-    print()
-    print("Training data:")
-    print(f"Total samples: {len(combined)}")
-    print(f"Training samples: {len(X_train)}")
-    print(f"Testing samples: {len(X_test)}")
-    print()
-
-    model = create_model()
-
-    print("Training Random Forest model...")
-
-    model.fit(
-        X_train,
-        y_train,
-    )
-
-    predictions = model.predict(
-        X_test
-    )
-
-    accuracy = accuracy_score(
-        y_test,
-        predictions,
-    )
-
-    print()
+    print("\nFinal holdout results:")
+    print(f"Model accuracy: {accuracy_score(holdout['target'], predictions):.2%}")
     print(
-        f"Model accuracy: {accuracy:.2%}"
+        "Model balanced accuracy: "
+        f"{balanced_accuracy_score(holdout['target'], predictions):.2%}"
     )
-
-    print()
-    print("Classification report:")
     print(
-        classification_report(
-            y_test,
-            predictions,
-            zero_division=0,
-        )
+        f"Baseline accuracy: "
+        f"{accuracy_score(holdout['target'], baseline_predictions):.2%}"
     )
-
-    print()
-    print("Confusion matrix:")
     print(
-        confusion_matrix(
-            y_test,
-            predictions,
-        )
+        "Baseline balanced accuracy: "
+        f"{balanced_accuracy_score(holdout['target'], baseline_predictions):.2%}"
     )
 
-    # Save the trained model.
-    joblib.dump(
-        model,
-        MODEL_PATH,
-    )
+    # After evaluation, retrain the chosen model on all available data.
+    selected_model.fit(data[FEATURES], data["target"])
+    joblib.dump(selected_model, MODEL_PATH)
 
-    print()
-    print(
-        f"Model saved to: {MODEL_PATH}"
-    )
+    print(f"\nSaved {best_name} to {MODEL_PATH}")
 
 
 if __name__ == "__main__":

@@ -219,3 +219,5 @@ __marimo__/
 
 #Stock_Model
 .pkl
+
+experiment/

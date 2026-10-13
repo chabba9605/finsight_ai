@@ -1,0 +1,13 @@
+.stock-chart-card { margin: 0 0 16px; padding: 24px; border: 1px solid #243249; border-radius: 15px; background: #101a2a; }
+.stock-chart-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+.stock-chart-eyebrow { color: #8295b2; letter-spacing: 1.5px; font-size: 10px; font-weight: 700; }
+.stock-chart-top h3 { display: flex; align-items: center; gap: 10px; font-size: 17px; margin: 9px 0; }
+.stock-chart-up { color: #36d39c; font-size: 13px; }
+.stock-chart-down { color: #fa7086; font-size: 13px; }
+.stock-chart-periods { display: flex; align-items: center; gap: 4px; background: #0b1422; border: 1px solid #2b3b54; border-radius: 9px; padding: 4px; }
+.stock-chart-periods button { border: 0; border-radius: 6px; background: transparent; color: #95a5bd; padding: 8px 11px; font-size: 12px; }
+.stock-chart-periods button.active { background: #366cec; color: white; }
+.stock-chart-plot { height: 300px; width: 100%; }
+.stock-chart-message { height: 300px; display: flex; align-items: center; justify-content: center; gap: 10px; color: #99aac4; font-size: 13px; }
+.stock-chart-note { color: #71839d; margin: 10px 0 0; font-size: 11px; }
+@media (max-width: 760px) { .stock-chart-card { padding: 18px; } .stock-chart-plot { height: 250px; } }

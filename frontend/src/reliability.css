@@ -1,0 +1,9 @@
+.stream-progress-top {display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:14px}
+.stream-progress-top h2 {margin:0}
+.cancel-analysis {background:#26364c;border:1px solid #4b607e;border-radius:8px;padding:9px 15px;color:#dbe7fb;font-weight:600}
+.cancel-analysis:hover,.cancel-analysis:focus-visible {background:#354a67;border-color:#83a7e7}
+.error-banner {gap:12px;align-items:flex-start}
+.error-banner span {flex:1;line-height:1.55}
+.dismiss-error {border:1px solid #a76a79;background:transparent;color:#ffbdc7;border-radius:6px;padding:5px 10px}
+.dismiss-error:hover {background:#552b38}
+@media(max-width:600px){.stream-progress-top{align-items:flex-start}.cancel-analysis{flex-shrink:0}}

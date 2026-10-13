@@ -19,7 +19,10 @@ llm = ChatOpenAI(
     model="zai-org/GLM-5.3",
     api_key=NEBIUS_API_KEY,
     base_url="https://api.studio.nebius.ai/v1/",
-    temperature=0.9
+    temperature=0.3,
+    max_tokens=700,
+    timeout=45,
+    max_retries=1,
 )
 
 
@@ -115,7 +118,7 @@ def analyse_stock(
             "market_data": market_data,
             "ml_prediction": ml_prediction,
             "context": context,
-            "chat_history": chat_history,
+            "chat_history": chat_history[-6:],
         }
     )
 

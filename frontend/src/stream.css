@@ -1,0 +1,9 @@
+.stream-progress{background:#101a2a;border:1px solid #243249;border-radius:15px;padding:24px;margin:20px 0}
+.stream-progress h2{display:flex;align-items:center;gap:12px;font-size:18px;margin:0 0 24px}
+.stream-stage{display:flex;align-items:center;gap:15px;border-top:1px solid #26364c;padding:17px 0}
+.stream-dot{font-size:17px;color:#62738c;width:24px;text-align:center}
+.stream-dot.done{color:#31c48d}
+.stream-dot.active{color:#73a4ff}
+.stream-stage strong{display:block;font-size:13px}
+.stream-stage small{display:block;color:#8191aa;font-size:11px;margin-top:6px}
+.stream-status{margin-left:auto;color:#94a8c5;font-size:11px;white-space:nowrap}

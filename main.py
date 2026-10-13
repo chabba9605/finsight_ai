@@ -1,4 +1,6 @@
 from fastapi import FastAPI, HTTPException
+from stock_history import router as stock_history_router
+from chat_stream import router as chat_stream_router
 
 from graph import pipeline
 
@@ -19,7 +21,8 @@ app = FastAPI(
     ),
     version="1.0.0",
 )
-
+app.include_router(stock_history_router)
+app.include_router(chat_stream_router)
 
 @app.get(
     "/health",

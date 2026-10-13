@@ -5,9 +5,11 @@ from rag.retriever import get_financial_news
 def retrieval_agent(
     state: FinSightState,
 ) -> FinSightState:
-    """
-    Retrieve recent financial/news information using Tavily.
-    """
+    '''
+    latest earnings financial results
+    latest company news
+    analyst outlook
+    '''
 
     ticker = state["ticker"]
 
