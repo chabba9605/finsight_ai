@@ -1,4 +1,5 @@
 import yfinance as yf
+import math
 
 from components.state import FinSightState
 from ml.predict import predict_stock
@@ -34,13 +35,24 @@ def data_agent(
             f"No market data found for {ticker}"
         )
 
-    current_price = float(
-        history["Close"].iloc[-1]
-    )
 
-    first_price = float(
-        history["Close"].iloc[0]
-    )
+    valid_closes = history["Close"].dropna()
+    valid_closes = valid_closes[
+        valid_closes.map(lambda value: math.isfinite(float(value)))
+    ]
+
+    if len(valid_closes) < 2:
+        raise ValueError(
+            f"Insufficient valid market prices for {ticker}"
+        )
+
+    current_price = float(valid_closes.iloc[-1])
+    first_price = float(valid_closes.iloc[0])
+
+    if current_price <= 0 or first_price <= 0:
+        raise ValueError(
+            f"Invalid market prices for {ticker}"
+        )
 
     if first_price == 0:
         five_day_return = 0.0

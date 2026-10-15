@@ -18,7 +18,7 @@ STAGES = {
 
 
 def event(kind: str, **data) -> str:
-    return json.dumps({"type": kind, **data}, ensure_ascii=False) + "\n"
+    return json.dumps({"type": kind, **data}, ensure_ascii=False, allow_nan=False) + "\n"
 
 
 def format_report(request: ChatRequest, state: dict) -> dict:
