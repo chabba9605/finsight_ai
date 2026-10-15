@@ -20,4 +20,6 @@ joblib
 typing-extensions
 
 pytest
-httpx 
+httpx
+
+slowapi
