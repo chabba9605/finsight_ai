@@ -7,3 +7,28 @@
 .dismiss-error {border:1px solid #a76a79;background:transparent;color:#ffbdc7;border-radius:6px;padding:5px 10px}
 .dismiss-error:hover {background:#552b38}
 @media(max-width:600px){.stream-progress-top{align-items:flex-start}.cancel-analysis{flex-shrink:0}}
+.backend-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 13px;
+  border-radius: 8px;
+  background: #172337;
+  font-size: 12px;
+  color: #aebcd1;
+}
+
+.backend-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f5b84b;
+}
+
+.backend-status.ready .backend-status-dot {
+  background: #36d39c;
+}
+
+.backend-status.unavailable .backend-status-dot {
+  background: #fa7086;
+}

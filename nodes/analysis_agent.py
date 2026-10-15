@@ -68,17 +68,35 @@ def parse_analysis(text: str) -> dict:
                 (" " if sections[current] else "") + clean
             )
 
-    # Do not silently accept an incomplete LLM response.
-    if (
-        not sections["recommendation"]
-        or not sections["reason"]
-    ):
+
+    
+    # Require a single valid recommendation.
+    recommendation = sections["recommendation"].strip().upper()
+    confidence = sections["confidence"].strip().upper()
+
+    if recommendation not in {"BUY", "HOLD", "SELL"}:
         raise ValueError(
-            "Nebius returned an incomplete analysis. "
-            "Please retry the request."
+            "The AI did not return a valid BUY, HOLD, "
+            "or SELL recommendation. Please retry."
         )
 
+    if confidence not in {"HIGH", "MEDIUM", "LOW"}:
+        raise ValueError(
+            "The AI did not return a valid confidence level. "
+            "Please retry."
+        )
+
+    if not sections["reason"].strip():
+        raise ValueError(
+            "The AI did not explain its recommendation. "
+            "Please retry."
+        )
+
+    sections["recommendation"] = recommendation
+    sections["confidence"] = confidence
+
     return sections
+
 
 
 def analysis_agent(

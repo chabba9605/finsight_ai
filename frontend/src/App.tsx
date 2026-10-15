@@ -110,6 +110,48 @@ function App() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
   const timedOutRef = useRef(false);
+  const [serverStatus, setServerStatus] = useState<
+    "starting" | "ready" | "unavailable"
+    >("starting");
+
+    useEffect(() => {
+      const controller = new AbortController();
+      const apiUrl = import.meta.env.VITE_API_URL || "/api";
+
+      async function checkServer() {
+        setServerStatus("starting");
+
+        for (let attempt = 0; attempt < 12; attempt++) {
+          if (controller.signal.aborted) return;
+
+          try {
+            const response = await fetch(`${apiUrl}/health`, {
+              signal: controller.signal,
+              cache: "no-store",
+            });
+
+            if (response.ok) {
+              setServerStatus("ready");
+              return;
+            }
+          } catch {
+            if (controller.signal.aborted) return;
+          }
+
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, 5000);
+          });
+        }
+
+        if (!controller.signal.aborted) {
+          setServerStatus("unavailable");
+        }
+      }
+
+      void checkServer();
+
+      return () => controller.abort();
+    }, []);
 
   useEffect(() => () => {
     abortRef.current?.abort();
@@ -271,7 +313,13 @@ function App() {
           ))}
         </div>
         <div className="sidebar-bottom">
-          <div className="model-status"><span className="status-dot" /> Nebius AI · Via API</div>
+          <div className={`backend-status ${serverStatus}`}>
+            <span className="backend-status-dot" />
+            {serverStatus === "ready" 
+            ? "AI Server Online" 
+            : serverStatus === "starting" ? "Starting AI Server..." 
+            : "AI Server Unavailable"}
+          </div>
           <p>Session: <code title={sessionId}>{sessionId.slice(0, 8)}...</code></p>
           <button className="session-copy" onClick={() => void navigator.clipboard.writeText(sessionId)}>
             Copy session ID

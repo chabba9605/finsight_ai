@@ -121,5 +121,9 @@ def analyse_stock(
             "chat_history": chat_history[-6:],
         }
     )
+    print("========== NEBIUS RAW RESPONSE ==========")
+    print(repr(result))
+    print("=========================================")
 
+    
     return result
