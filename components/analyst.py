@@ -16,12 +16,12 @@ if not NEBIUS_API_KEY:
     )
 
 llm = ChatOpenAI(
-    model="zai-org/GLM-5.3",
+    model="nvidia/nemotron-3-super-120b-a12b",
     api_key=NEBIUS_API_KEY,
     base_url="https://api.studio.nebius.ai/v1/",
-    temperature=0.3,
+    temperature=0.2,
     max_tokens=1500,
-    timeout=45,
+    timeout=90,
     max_retries=1,
 )
 
