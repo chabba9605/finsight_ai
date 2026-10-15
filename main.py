@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from rate_limit import limiter, analysis_limit
 from stock_history import router as stock_history_router
 from chat_stream import router as chat_stream_router
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,6 +35,12 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+app.state.limiter = limiter
+
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
+)
 app.include_router(stock_history_router)
 app.include_router(chat_stream_router)
 
@@ -53,15 +62,17 @@ def health():
     "/chat",
     response_model=ChatResponse,
 )
+@analysis_limit
 def chat(
-    request: ChatRequest,
+    request: Request,
+    payload: ChatRequest,
 ):
     """
     Run a financial research conversation
     through the LangGraph pipeline.
     """
 
-    if not request.ticker:
+    if not payload.ticker:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -69,7 +80,7 @@ def chat(
             ),
         )
 
-    ticker = request.ticker.upper().strip()
+    ticker = payload.ticker.upper().strip()
 
     try:
 
@@ -79,13 +90,13 @@ def chat(
         # to retrieve previous conversation state.
         result = pipeline.invoke(
             {
-                "session_id": request.session_id,
+                "session_id": payload.session_id,
                 "ticker": ticker,
-                "question": request.message,
+                "question": payload.message,
             },
             config={
                 "configurable": {
-                    "thread_id": request.session_id
+                    "thread_id": payload.session_id
                 }
             },
         )
@@ -119,13 +130,13 @@ def chat(
         )
 
         return {
-            "session_id": request.session_id,
+            "session_id": payload.session_id,
 
             "ticker": result[
                 "ticker"
             ],
 
-            "message": request.message,
+            "message": payload.message,
 
             "market_data": {
                 "ticker": market_data[

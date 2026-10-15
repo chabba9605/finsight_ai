@@ -2,7 +2,8 @@
 import json
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from rate_limit import analysis_limit
 from fastapi.responses import StreamingResponse
 from graph import pipeline
 from schema import ChatRequest, ChatResponse
@@ -43,16 +44,19 @@ def format_report(request: ChatRequest, state: dict) -> dict:
 
 
 @router.post("/chat/stream")
-def stream_chat(request: ChatRequest):
-    if not request.ticker or not request.ticker.strip():
+@analysis_limit
+def stream_chat(request: Request,
+                payload: ChatRequest
+                ):
+    if not payload.ticker or not payload.ticker.strip():
         raise HTTPException(status_code=400, detail="A stock ticker is required.")
 
     def generate():
-        config = {"configurable": {"thread_id": request.session_id}}
+        config = {"configurable": {"thread_id": payload.session_id}}
         state = {
-            "session_id": request.session_id,
-            "ticker": request.ticker.strip().upper(),
-            "question": request.message,
+            "session_id": payload.session_id,
+            "ticker": payload.ticker.strip().upper(),
+            "question": payload.message,
         }
         merged = dict(state)
         yield event("started")
@@ -66,7 +70,7 @@ def stream_chat(request: ChatRequest):
                         yield event("stage_completed", stage=STAGES[node])
 
             # The merged node updates contain this request's complete final output.
-            yield event("completed", result=format_report(request, merged))
+            yield event("completed", result=format_report(payload, merged))
         except ValueError as exc:
             yield event("error", message=str(exc))
         except Exception:
