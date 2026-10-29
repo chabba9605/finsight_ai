@@ -263,7 +263,7 @@ This project was built for the **Nebius × NVIDIA Global AI Hackathon 2026**.
 **Raghav Chabba**
 B.Sc. Computer Science — Richmond, The American University London
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Raghav_Chabba-blue?style=flat-square&logo=linkedin)](https://linkedin.com/in/raghavchabba)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Raghav_Chabba-blue?style=flat-square&logo=linkedin)](https://linkedin.com/in/raghav-chabba)
 [![GitHub](https://img.shields.io/badge/GitHub-chabba9605-black?style=flat-square&logo=github)](https://github.com/chabba9605)
 
 ---
